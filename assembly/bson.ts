@@ -124,7 +124,7 @@ export function wasm_bson_to_json(bsonBytes: Uint8Array): Uint8Array {
 				break
 			}
 			default:
-				// trace('AHH')
+			// trace('AHH')
 		}
 
 		jsonBytes[writerIdx++] = COMMA

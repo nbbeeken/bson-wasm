@@ -8,6 +8,7 @@
 		"start": "node tests/server.js",
 		"fmt": "prettier --write package.json asconfig.json tsconfig.json src/* tests/* assembly/*",
 		"test": "node tests/index.js",
+		"test:browser": "echo 'Run npm start, and take a look at chrome 89+ on http://localhost:8080'",
 		"asbuild:untouched": "asc --target debug",
 		"asbuild:optimized": "asc --target release",
 		"asbuild": "npm run asbuild:untouched && npm run asbuild:optimized",

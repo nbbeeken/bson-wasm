@@ -1,7 +1,5 @@
 {
-	"entries": [
-		"./assembly/bson.ts"
-	  ],
+	"entries": ["./assembly/bson.ts"],
 	"targets": {
 		"debug": {
 			"binaryFile": "build/untouched.wasm",

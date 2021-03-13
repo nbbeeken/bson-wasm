@@ -4,6 +4,7 @@
 		"asconfig",
 		"assemblyscript",
 		"idof",
+		"importmaps",
 		"tsbuild",
 		"wasm"
 	]
