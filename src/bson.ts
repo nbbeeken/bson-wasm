@@ -1,5 +1,3 @@
-export const InputArrayId = idof<Uint8Array>()
-
 const BSON_DOUBLE = 0x01
 const BSON_STRING = 0x02
 const BSON_DOCUMENT = 0x03
@@ -40,7 +38,7 @@ const ASCII_ZERO = 0x30
 // '-' 0x2D
 const ASCII_MINUS = 0x2d
 
-export function wasm_bson_to_json(bsonBytes: Uint8Array): Uint8Array {
+export function javascript_bson_to_json(bsonBytes: Uint8Array): Uint8Array {
 	// Need to calculate how much space needed for JSON
 	// Maybe start with an upper end allocation and can grow and copy if needed
 	// start jsonBytes with {
@@ -59,7 +57,7 @@ export function wasm_bson_to_json(bsonBytes: Uint8Array): Uint8Array {
 	readerIdx += 4
 
 	let writerIdx = 8
-	jsonView.setUint64(0, writerIdx, true)
+	jsonView.setBigUint64(0, BigInt(writerIdx), true)
 
 	jsonBytes[writerIdx++] = OPEN_BRACE
 
@@ -124,7 +122,7 @@ export function wasm_bson_to_json(bsonBytes: Uint8Array): Uint8Array {
 				break
 			}
 			default:
-				trace('AHH')
+				console.log('AHH')
 		}
 
 		jsonBytes[writerIdx++] = COMMA
@@ -137,20 +135,11 @@ export function wasm_bson_to_json(bsonBytes: Uint8Array): Uint8Array {
 		jsonBytes[writerIdx++] = CLOSE_BRACE
 	}
 
-	jsonView.setUint64(0, writerIdx, true)
+	jsonView.setBigUint64(0, BigInt(writerIdx), true)
 
 	return jsonBytes
 }
 
-export function wasm_json_to_bson(a: Uint8Array): ArrayBuffer {
-	const newThing = new Uint8Array(a.byteLength)
-	newThing.set(a)
-	const view = new DataView(newThing.buffer)
-	view.setUint8(0, 65)
-	return newThing.buffer
-}
-
-// helpers
 
 function copy(
 	destination: Uint8Array,
@@ -163,7 +152,7 @@ function copy(
 	}
 }
 
-function intToAscii(number: i32): Uint8Array {
+function intToAscii(number: number): Uint8Array {
 	let sign = number
 
 	let spaceForMinus = 0
@@ -173,7 +162,7 @@ function intToAscii(number: i32): Uint8Array {
 		spaceForMinus = 1
 	}
 
-	const len: i32 = (Math.floor(Math.log10(Math.abs(number))) + 1) as i32
+	const len = (Math.floor(Math.log10(Math.abs(number))) + 1)
 	const s = new Uint8Array(len + spaceForMinus)
 
 	// trace('itoa', 2, number, len)

@@ -1,3 +1,4 @@
+
 function log(...args) {
 	if (typeof window !== 'undefined') {
 		const logSection = document.getElementById('log')
@@ -23,29 +24,51 @@ const testDoc = Uint8Array.from([0x0c, 0x00, 0x00, 0x00, 0x10, 0x61, 0x00, 0xea,
 
 // {a: 0xbad1dea, niceKey: 'a good string'}
 // prettier-ignore
-const testDoc2 = [
+const testDoc2 = Uint8Array.from([
 	39,   0,   0,   0,  16,  97,   0, 234,  29, 173,
 	11,   2, 110, 105,  99, 101,  75, 101, 121,   0,
 	14,   0,   0,   0,  97,  32, 103, 111, 111, 100,
 	32, 115, 116, 114, 105, 110, 103,   0,   0
-]
+])
 
 // If only nodejs supported importmaps
 const moduleImport = (typeof window !== 'undefined' ? import('mod') : import('../lib/mod.js'))
 
 moduleImport.then((mod) => {
-	const { bsonToJson } = mod
-	const bytes = bsonToJson(testDoc)
-	log('bytes', bytes)
-	const string = decoder.decode(bytes)
-	log('string', string)
-	const parsed = JSON.parse(string)
-	log('parsed', parsed)
+	const { bsonToJson, bsonToJsonJS } = mod
+	// const bytes = bsonToJson(testDoc)
+	// log('bytes', bytes)
+	// const string = decoder.decode(bytes)
+	// log('string', string)
+	// const parsed = JSON.parse(string)
+	// log('parsed', parsed)
 
-	const bytes2 = bsonToJson(testDoc2)
-	log('bytes2', bytes2)
-	const string2 = decoder.decode(bytes2)
-	log('string2', string2)
-	const parsed2 = JSON.parse(string2)
-	log('parsed2', parsed2)
+	// const bytes2 = bsonToJson(testDoc2)
+	// log('bytes2', bytes2)
+	// const string2 = decoder.decode(bytes2)
+	// log('string2', string2)
+	// const parsed2 = JSON.parse(string2)
+	// log('parsed2', parsed2)
+
+	const ITERATIONS = 600000
+	log('ITERATIONS =', ITERATIONS)
+
+	performance.mark('wasmStart')
+	for (let i = 0; i < ITERATIONS; i++) {
+		bsonToJson(testDoc2)
+	}
+	performance.mark('wasmEnd')
+	const wasmMeasure = performance.measure('time took to do wasm', 'wasmStart', 'wasmEnd')
+	log('WASM took', wasmMeasure.duration, 'ms')
+
+	performance.mark('JSStart')
+	for (let i = 0; i < ITERATIONS; i++) {
+	 	bsonToJsonJS(testDoc2)
+	}
+	performance.mark('JSEnd')
+	const jsMeasure = performance.measure('time took to do JS', 'JSStart', 'JSEnd')
+	log('JS took', jsMeasure.duration, 'ms')
+
+	performance.clearMarks();
+    performance.clearMeasures();
 })

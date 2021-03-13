@@ -1,5 +1,6 @@
 import { readFile } from 'fs/promises'
 import { instantiate } from '@assemblyscript/loader'
+import { javascript_bson_to_json } from 'bson-js'
 
 // const WASM_IMPORTS = {}
 
@@ -28,6 +29,12 @@ export function bsonToJson(buffer: Uint8Array) {
 	const inputPtr = newArray(InputArrayId, buffer)
 	const resultPtr = wasm_bson_to_json(inputPtr)
 	const jsonBytes = getUint8Array(resultPtr)
+	const size = new DataView(jsonBytes.buffer).getBigUint64(0, true)
+	return jsonBytes.subarray(8, 8 + Number(size - 8n))
+}
+
+export function bsonToJsonJS(buffer: Uint8Array) {
+	const jsonBytes = javascript_bson_to_json(buffer)
 	const size = new DataView(jsonBytes.buffer).getBigUint64(0, true)
 	return jsonBytes.subarray(8, 8 + Number(size - 8n))
 }
