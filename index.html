@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BSON Wasm Test</title>
+	<script type="importmap">
+		{
+		  "imports": {
+			"@assemblyscript/loader": "/node_modules/@assemblyscript/loader/index.js",
+			"fs/promises": "/lib/fs_promises_shim.js",
+			"mod": "/lib/mod.js"
+		  }
+		}
+	</script>
+</head>
+<body>
+	<h4>BSON Wasm test</h4>
+	<ul id="log">
+
+	</ul>
+</body>
+<script type="module" src="./tests/index.js"></script>
+</html>

@@ -1,0 +1,11 @@
+{
+	"compileOnSave": true,
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"outDir": "lib",
+		"moduleResolution": "node",
+		"inlineSourceMap": true
+	},
+	"include": ["src/**/*"]
+}
