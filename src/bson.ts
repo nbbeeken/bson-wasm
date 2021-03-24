@@ -96,14 +96,15 @@ export function javascript_bson_to_json(bsonBytes: Uint8Array): Uint8Array {
 				readable = false
 				break
 			case BSON_INT32: {
-				let int32AsArray = intToAscii(bsonView.getInt32(readerIdx, true))
+				let int32AsArray = [...String(bsonView.getInt32(readerIdx, true))].map(s => s.charCodeAt(0))
 				// trace(int32AsArray.toString())
+				const length = int32AsArray.length
 				copy(
 					jsonBytes.subarray(writerIdx),
 					int32AsArray,
-					int32AsArray.byteLength
+					length
 				)
-				writerIdx += int32AsArray.byteLength
+				writerIdx += length
 				readerIdx += 4
 				break
 			}
@@ -142,7 +143,7 @@ export function javascript_bson_to_json(bsonBytes: Uint8Array): Uint8Array {
 
 function copy(
 	destination: Uint8Array,
-	source: Uint8Array,
+	source: Uint8Array | number[],
 	length: number
 ): void {
 	// trace('Copy', 3, destination.length, source.length, length)
