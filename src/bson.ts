@@ -140,7 +140,6 @@ export function javascript_bson_to_json(bsonBytes: Uint8Array): Uint8Array {
 	return jsonBytes
 }
 
-
 function copy(
 	destination: Uint8Array,
 	source: Uint8Array,
@@ -162,7 +161,7 @@ function intToAscii(number: number): Uint8Array {
 		spaceForMinus = 1
 	}
 
-	const len = (Math.floor(Math.log10(Math.abs(number))) + 1)
+	const len = Math.floor(Math.log10(Math.abs(number))) + 1
 	const s = new Uint8Array(len + spaceForMinus)
 
 	// trace('itoa', 2, number, len)

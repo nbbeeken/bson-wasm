@@ -1,4 +1,3 @@
-
 function log(...args) {
 	if (typeof window !== 'undefined') {
 		const logSection = document.getElementById('log')
@@ -32,7 +31,8 @@ const testDoc2 = Uint8Array.from([
 ])
 
 // If only nodejs supported importmaps
-const moduleImport = (typeof window !== 'undefined' ? import('mod') : import('../lib/mod.js'))
+const moduleImport =
+	typeof window !== 'undefined' ? import('mod') : import('../lib/mod.js')
 
 moduleImport.then((mod) => {
 	const { bsonToJson, bsonToJsonJS } = mod
@@ -50,28 +50,56 @@ moduleImport.then((mod) => {
 	// const parsed2 = JSON.parse(string2)
 	// log('parsed2', parsed2)
 
+	globalThis.results = []
+
 	const iterationsToTry = [100, 1000, 10_000, 100_000, 600_000, 1_000_000]
 	for (const ITERATIONS of iterationsToTry) {
 		log('ITERATIONS =', ITERATIONS)
 
+		const wasmResults = new Array(ITERATIONS)
+		const jsResults = new Array(ITERATIONS)
+
 		performance.mark('wasmStart')
 		for (let i = 0; i < ITERATIONS; i++) {
-			bsonToJson(testDoc2)
+			wasmResults[i] = bsonToJson(testDoc2)
 		}
 		performance.mark('wasmEnd')
-		const wasmMeasure = performance.measure('time took to do wasm', 'wasmStart', 'wasmEnd')
-		log('WASM took', wasmMeasure.duration.toFixed(6), 'ms', 'or', (wasmMeasure.duration / ITERATIONS).toFixed(6), 'ops/ms')
+		const wasmMeasure = performance.measure(
+			'time took to do wasm',
+			'wasmStart',
+			'wasmEnd'
+		)
+		log(
+			'WASM took',
+			wasmMeasure.duration.toFixed(6),
+			'ms',
+			'or',
+			(wasmMeasure.duration / ITERATIONS).toFixed(6),
+			'ops/ms'
+		)
 
 		performance.mark('JSStart')
 		for (let i = 0; i < ITERATIONS; i++) {
-			 bsonToJsonJS(testDoc2)
+			jsResults[i] = bsonToJsonJS(testDoc2)
 		}
 		performance.mark('JSEnd')
-		const jsMeasure = performance.measure('time took to do JS', 'JSStart', 'JSEnd')
-		log('JS took', jsMeasure.duration.toFixed(6), 'ms', 'or', (jsMeasure.duration / ITERATIONS).toFixed(6), 'ops/ms')
+		const jsMeasure = performance.measure(
+			'time took to do JS',
+			'JSStart',
+			'JSEnd'
+		)
+		log(
+			'JS took',
+			jsMeasure.duration.toFixed(6),
+			'ms',
+			'or',
+			(jsMeasure.duration / ITERATIONS).toFixed(6),
+			'ops/ms'
+		)
 
-		performance.clearMarks();
-		performance.clearMeasures();
+		performance.clearMarks()
+		performance.clearMeasures()
+
+		globalThis.results.push({ ITERATIONS, wasmResults, jsResults })
 	}
-
 })

@@ -14,28 +14,33 @@ async function main() {
 
 		console.log(request.method, url.pathname)
 
-		if (url.pathname === '/') {
-			response.setHeader('Content-Type', 'text/html')
-			response.end(await readFile('./index.html'), 'utf8')
-			continue
-		} else {
-			const fileData = await readFile(url.pathname.slice(1))
+		try {
+			if (url.pathname === '/') {
+				response.setHeader('Content-Type', 'text/html')
+				response.end(await readFile('./index.html'), 'utf8')
+				continue
+			} else {
+				const fileData = await readFile(url.pathname.slice(1))
 
-			// Get the extension
-			const fileParts = url.pathname.split('.')
-			const fileExtension = fileParts[fileParts.length - 1]
+				// Get the extension
+				const fileParts = url.pathname.split('.')
+				const fileExtension = fileParts[fileParts.length - 1]
 
-			if (fileExtension === 'js') {
-				response.setHeader('Content-Type', 'application/javascript')
-			}
-			if (fileExtension === 'wasm') {
-				response.setHeader('Content-Type', 'application/wasm')
-			}
-			if (fileExtension === 'map' || fileExtension === 'json') {
-				response.setHeader('Content-Type', 'application/json')
-			}
+				if (fileExtension === 'js') {
+					response.setHeader('Content-Type', 'application/javascript')
+				}
+				if (fileExtension === 'wasm') {
+					response.setHeader('Content-Type', 'application/wasm')
+				}
+				if (fileExtension === 'map' || fileExtension === 'json') {
+					response.setHeader('Content-Type', 'application/json')
+				}
 
-			response.end(fileData, 'utf8')
+				response.end(fileData, 'utf8')
+			}
+		} catch (error) {
+			response.statusCode = 500
+			response.end(`Bad Request: ${error}`, 'utf8')
 		}
 	}
 }
