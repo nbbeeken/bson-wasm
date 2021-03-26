@@ -21,21 +21,49 @@ const testDoc = Uint8Array.from([0x0c, 0x00, 0x00, 0x00, 0x10, 0x61, 0x00, 0xea,
 
 // 0xbad1dea = 195894762
 
-// {a: 0xbad1dea, niceKey: 'a good string'}
-// prettier-ignore
-const testDoc2 = Uint8Array.from([
-	39,   0,   0,   0,  16,  97,   0, 234,  29, 173,
-	11,   2, 110, 105,  99, 101,  75, 101, 121,   0,
-	14,   0,   0,   0,  97,  32, 103, 111, 111, 100,
-	32, 115, 116, 114, 105, 110, 103,   0,   0
+const baseDoc = Uint8Array.from([
+	39,   0,   0,   0, // Size
+	16, // Int32
+	97,   0, // 'a'
+	234,  29, 173, 11, // 0xBAD1DEA - starts at offset 7
+	2, // string type
+	110, 105,  99, 101,  75, 101, 121,   0, // 'niceKey'
+	14,   0,   0,   0, // string size
+	97,  32, 103, 111, 111, 100, 32, 115, 116, 114, 105, 110, 103, 0, // 'a good string' - offset 24
+	0 // finishing null
 ])
 
-// If only nodejs supported importmaps
-const moduleImport =
-	typeof window !== 'undefined' ? import('mod') : import('../lib/mod.js')
+// {a: 0xbad1dea, niceKey: 'a good string'}
+// prettier-ignore
+const testDocs = new Array(1_000_000)
+globalThis.testDocs = testDocs
 
-moduleImport.then((mod) => {
-	const { bsonToJson, bsonToJsonJS } = mod
+for (let i = 0; i < testDocs.length; i++) {
+	testDocs[i] = baseDoc.slice() // create copy
+	const view = new DataView(testDocs[i].buffer)
+	view.setInt32(7, Math.random() * 0xFF_FF_FF_FF, true)
+	var string = [...(Math.random().toFixed(15).substr(0, 13))].map(c => c.charCodeAt()) // spread and set
+	testDocs[i].set(string, 24)
+}
+
+// If only nodejs supported importmaps
+const imports =
+	typeof window !== 'undefined' ? [import('mod')] : [import('../lib/mod.js'), import('perf_hooks')]
+
+Promise.all(imports).then((mods) => {
+	const { bsonToJson, bsonToJsonJS } = mods.shift()
+
+	let performance
+	if (typeof globalThis.performance === 'undefined') {
+		if (mods.length !== 0) {
+			performance = mods[0].performance
+		}
+		else throw new Error('cant fine performance api')
+	} else {
+		performance = globalThis.performance
+	}
+
+
 	// const bytes = bsonToJson(testDoc)
 	// log('bytes', bytes)
 	// const string = decoder.decode(bytes)
@@ -61,7 +89,7 @@ moduleImport.then((mod) => {
 
 		performance.mark('wasmStart')
 		for (let i = 0; i < ITERATIONS; i++) {
-			wasmResults[i] = bsonToJson(testDoc2)
+			wasmResults[i] = bsonToJson(testDocs[i])
 		}
 		performance.mark('wasmEnd')
 		const wasmMeasure = performance.measure(
@@ -80,7 +108,7 @@ moduleImport.then((mod) => {
 
 		performance.mark('JSStart')
 		for (let i = 0; i < ITERATIONS; i++) {
-			jsResults[i] = bsonToJsonJS(testDoc2)
+			jsResults[i] = bsonToJsonJS(testDocs[i])
 		}
 		performance.mark('JSEnd')
 		const jsMeasure = performance.measure(

@@ -1,6 +1,6 @@
 import { readFile } from 'fs/promises'
 import { instantiate } from '@assemblyscript/loader'
-import { javascript_bson_to_json } from 'bson-js'
+import { javascript_bson_to_json } from './bson.js'
 
 // const WASM_IMPORTS = {}
 
