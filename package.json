@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"start": "node tests/server.js",
-		"fmt": "prettier --write package.json asconfig.json tsconfig.json src/* tests/* assembly/*",
+		"fmt": "prettier --write *.md package.json asconfig.json tsconfig.json src/* tests/* assembly/*",
 		"test": "node tests/index.js",
 		"test:browser": "echo 'Run npm start, and take a look at chrome 89+ on http://localhost:8080'",
 		"asbuild:untouched": "asc --target debug",
@@ -19,11 +19,12 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
-		"@assemblyscript/loader": "^0.18.14"
+		"@assemblyscript/loader": "^0.18.16",
+		"bson-ext": "^2.0.5"
 	},
 	"devDependencies": {
-		"@types/node": "^14.14.34",
-		"assemblyscript": "^0.18.14",
+		"@types/node": "^14.14.36",
+		"assemblyscript": "^0.18.16",
 		"prettier": "^2.2.1",
 		"typescript": "^4.2.3"
 	}

@@ -1,20 +1,26 @@
 # Results
 
 - ITERATIONS = 100
-  - WASM took 1.200000 ms or 0.012000 ops/ms
-  - JS took 1.055000 ms or 0.010550 ops/ms
+  - WASM took 3.028300 ms or 0.030283 ops/ms
+  - JS took 1.493300 ms or 0.014933 ops/ms
+  - CPP took 7.074600 ms or 0.070746 ops/ms
 - ITERATIONS = 1000
-  - WASM took 7.845000 ms or 0.007845 ops/ms
-  - JS took 7.955000 ms or 0.007955 ops/ms
+  - WASM took 15.709600 ms or 0.015710 ops/ms
+  - JS took 7.457300 ms or 0.007457 ops/ms
+  - CPP took 4.310400 ms or 0.004310 ops/ms
 - ITERATIONS = 10000
-  - WASM took 56.800000 ms or 0.005680 ops/ms
-  - JS took 59.175000 ms or 0.005918 ops/ms
+  - WASM took 57.796400 ms or 0.005780 ops/ms
+  - JS took 57.083300 ms or 0.005708 ops/ms
+  - CPP took 39.784900 ms or 0.003978 ops/ms
 - ITERATIONS = 100000
-  - WASM took 1939.935000 ms or 0.019399 ops/ms
-  - JS took 540.200000 ms or 0.005402 ops/ms
+  - WASM took 625.657500 ms or 0.006257 ops/ms
+  - JS took 454.443700 ms or 0.004544 ops/ms
+  - CPP took 429.204700 ms or 0.004292 ops/ms
 - ITERATIONS = 600000
-  - WASM took 4187.515000 ms or 0.006979 ops/ms
-  - JS took 3621.880000 ms or 0.006036 ops/ms
+  - WASM took 3831.808300 ms or 0.006386 ops/ms
+  - JS took 2816.837200 ms or 0.004695 ops/ms
+  - CPP took 2484.312800 ms or 0.004141 ops/ms
 - ITERATIONS = 1000000
-  - WASM took 8193.010000 ms or 0.008193 ops/ms
-  - JS took 7197.050000 ms or 0.007197 ops/ms
+  - WASM took 7499.740300 ms or 0.007500 ops/ms
+  - JS took 5668.749000 ms or 0.005669 ops/ms
+  - CPP took 3627.849300 ms or 0.003628 ops/ms

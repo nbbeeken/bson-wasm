@@ -14,13 +14,31 @@ function log(...args) {
 	console.log(...args)
 }
 
-const decoder = new TextDecoder('utf-8')
+class PerfShim {
+	marks = new Map()
+	mark(token) {
+		this.marks.set(token, process.hrtime.bigint())
+	}
+	measure(description, tokenStart, tokenEnd) {
+		const duration =
+			Number(this.marks.get(tokenEnd) - this.marks.get(tokenStart)) / 1_000_000
+		this.marks.delete(tokenEnd)
+		this.marks.delete(tokenStart)
+		return { description, duration }
+	}
+	clearMarks() {
+		this.marks.clear()
+	}
+	clearMeasures() {
+		this.marks.clear()
+	}
+}
 
-//prettier-ignore
-const testDoc = Uint8Array.from([0x0c, 0x00, 0x00, 0x00, 0x10, 0x61, 0x00, 0xea, 0x1d, 0xad, 0x0b, 0x00])
+const decoder = new TextDecoder('utf-8')
 
 // 0xbad1dea = 195894762
 
+//prettier-ignore
 const baseDoc = Uint8Array.from([
 	39,   0,   0,   0, // Size
 	16, // Int32
@@ -41,42 +59,31 @@ globalThis.testDocs = testDocs
 for (let i = 0; i < testDocs.length; i++) {
 	testDocs[i] = baseDoc.slice() // create copy
 	const view = new DataView(testDocs[i].buffer)
-	view.setInt32(7, Math.random() * 0xFF_FF_FF_FF, true)
-	var string = [...(Math.random().toFixed(15).substr(0, 13))].map(c => c.charCodeAt()) // spread and set
+	view.setInt32(7, Math.random() * 0xff_ff_ff_ff, true)
+	var string = [...Math.random().toFixed(15).substr(0, 13)].map((c) =>
+		c.charCodeAt(0)
+	) // spread and set
 	testDocs[i].set(string, 24)
 }
 
-// If only nodejs supported importmaps
-const imports =
-	typeof window !== 'undefined' ? [import('mod')] : [import('../lib/mod.js'), import('perf_hooks')]
+const isNodeJS = typeof window === 'undefined'
+const isWeb = typeof window !== 'undefined'
 
-Promise.all(imports).then((mods) => {
-	const { bsonToJson, bsonToJsonJS } = mods.shift()
+// If only nodejs supported importmaps
+const imports = isWeb
+	? [import('mod'), Promise.resolve({ default: undefined })]
+	: [import('../lib/mod.js'), import('bson-ext')]
+
+Promise.all(imports).then(([mod, { default: bsonExt }]) => {
+	const { bsonToJson, bsonToJsonJS } = mod
 
 	let performance
 	if (typeof globalThis.performance === 'undefined') {
-		if (mods.length !== 0) {
-			performance = mods[0].performance
-		}
-		else throw new Error('cant fine performance api')
+		// nodejs needs a performance shim
+		performance = new PerfShim()
 	} else {
 		performance = globalThis.performance
 	}
-
-
-	// const bytes = bsonToJson(testDoc)
-	// log('bytes', bytes)
-	// const string = decoder.decode(bytes)
-	// log('string', string)
-	// const parsed = JSON.parse(string)
-	// log('parsed', parsed)
-
-	// const bytes2 = bsonToJson(testDoc2)
-	// log('bytes2', bytes2)
-	// const string2 = decoder.decode(bytes2)
-	// log('string2', string2)
-	// const parsed2 = JSON.parse(string2)
-	// log('parsed2', parsed2)
 
 	globalThis.results = []
 
@@ -125,9 +132,54 @@ Promise.all(imports).then((mods) => {
 			'ops/ms'
 		)
 
+		if (isNodeJS) {
+			performance.mark('CPPStart')
+			for (let i = 0; i < ITERATIONS; i++) {
+				jsResults[i] = bsonToJsonCPP(bsonExt, testDocs[i])
+			}
+			performance.mark('CPPEnd')
+			const cppMeasure = performance.measure(
+				'time took to do CPP',
+				'CPPStart',
+				'CPPEnd'
+			)
+			log(
+				'CPP took',
+				cppMeasure.duration.toFixed(6),
+				'ms',
+				'or',
+				(cppMeasure.duration / ITERATIONS).toFixed(6),
+				'ops/ms'
+			)
+		}
+
 		performance.clearMarks()
 		performance.clearMeasures()
 
 		globalThis.results.push({ ITERATIONS, wasmResults, jsResults })
 	}
 })
+
+let bsonExtInstance
+function bsonToJsonCPP(bsonExt, doc) {
+	if (!bsonExtInstance) {
+		bsonExtInstance = new bsonExt([
+			bsonExt.Binary,
+			bsonExt.Code,
+			bsonExt.DBRef,
+			bsonExt.Decimal128,
+			bsonExt.Double,
+			bsonExt.Int32,
+			bsonExt.Long,
+			bsonExt.Map,
+			bsonExt.MaxKey,
+			bsonExt.MinKey,
+			bsonExt.ObjectId,
+			bsonExt.BSONRegExp,
+			bsonExt.Symbol,
+			bsonExt.Timestamp,
+		])
+	}
+
+	return JSON.stringify(bsonExtInstance.deserialize(doc))
+}

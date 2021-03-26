@@ -39,4 +39,11 @@ export function bsonToJsonJS(buffer: Uint8Array) {
 	return jsonBytes.subarray(8, 8 + Number(size - 8n))
 }
 
+export function bsonToJsonCPP(buffer: Uint8Array) {
+	if (typeof window !== 'undefined')
+		return Uint8Array.from(['{'.charCodeAt(0), '}'.charCodeAt(0)]) // web env, cannot test
+
+	// NODEJS Env
+}
+
 export function JsonToBson(json: string) {}

@@ -96,14 +96,12 @@ export function javascript_bson_to_json(bsonBytes: Uint8Array): Uint8Array {
 				readable = false
 				break
 			case BSON_INT32: {
-				let int32AsArray = [...String(bsonView.getInt32(readerIdx, true))].map(s => s.charCodeAt(0))
+				let int32AsArray = [
+					...String(bsonView.getInt32(readerIdx, true)),
+				].map((s) => s.charCodeAt(0))
 				// trace(int32AsArray.toString())
 				const length = int32AsArray.length
-				copy(
-					jsonBytes.subarray(writerIdx),
-					int32AsArray,
-					length
-				)
+				copy(jsonBytes.subarray(writerIdx), int32AsArray, length)
 				writerIdx += length
 				readerIdx += 4
 				break
