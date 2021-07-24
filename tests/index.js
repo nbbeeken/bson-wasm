@@ -40,14 +40,14 @@ const decoder = new TextDecoder('utf-8')
 
 //prettier-ignore
 const baseDoc = Uint8Array.from([
-	39,   0,   0,   0, // Size
+	39, 0, 0, 0, // Size
 	16, // Int32
-	97,   0, // 'a'
-	234,  29, 173, 11, // 0xBAD1DEA - starts at offset 7
+	97, 0, // 'a'
+	234, 29, 173, 11, // 0xBAD1DEA - starts at offset 7
 	2, // string type
-	110, 105,  99, 101,  75, 101, 121,   0, // 'niceKey'
-	14,   0,   0,   0, // string size
-	97,  32, 103, 111, 111, 100, 32, 115, 116, 114, 105, 110, 103, 0, // 'a good string' - offset 24
+	110, 105, 99, 101, 75, 101, 121, 0, // 'niceKey'
+	14, 0, 0, 0, // string size
+	97, 32, 103, 111, 111, 100, 32, 115, 116, 114, 105, 110, 103, 0, // 'a good string' - offset 24
 	0 // finishing null
 ])
 
@@ -69,16 +69,23 @@ for (let i = 0; i < testDocs.length; i++) {
 const isNodeJS = typeof window === 'undefined'
 const isWeb = typeof window !== 'undefined'
 
-// If only nodejs supported importmaps
-const imports = isWeb
-	? [import('mod'), Promise.resolve({ default: undefined })]
-	: [import('../lib/mod.js'), import('bson-ext')]
+const kName = Symbol('module.name')
 
-Promise.all(imports).then(([mod, { default: bsonExt }]) => {
+const MODULES = [
+	['mod', { web: 'mod', node: '../lib/mod.js' }],
+	['bson-ext', { node: 'bson-ext' }],
+	['js-bson', { web: 'bson', node: 'bson' }],
+].map(([name, { web, node }]) =>
+	isWeb && web === undefined
+		? Promise.resolve()
+		: import(isWeb ? web : node).then((mod) => ({ ...mod, [kName]: name }))
+)
+
+Promise.all(MODULES).then(([mod, bsonExt, jsBSON]) => {
 	const { bsonToJson, bsonToJsonJS } = mod
 
 	let performance
-	if (typeof globalThis.performance === 'undefined') {
+	if (isNodeJS) {
 		// nodejs needs a performance shim
 		performance = new PerfShim()
 	} else {
@@ -93,7 +100,9 @@ Promise.all(imports).then(([mod, { default: bsonExt }]) => {
 
 		const wasmResults = new Array(ITERATIONS)
 		const jsResults = new Array(ITERATIONS)
+		const jsBSONResults = new Array(ITERATIONS)
 
+		///////////////////////////////////////////////////////////
 		performance.mark('wasmStart')
 		for (let i = 0; i < ITERATIONS; i++) {
 			wasmResults[i] = bsonToJson(testDocs[i])
@@ -105,7 +114,7 @@ Promise.all(imports).then(([mod, { default: bsonExt }]) => {
 			'wasmEnd'
 		)
 		log(
-			'WASM took',
+			'\tWASM took',
 			wasmMeasure.duration.toFixed(6),
 			'ms',
 			'or',
@@ -113,6 +122,7 @@ Promise.all(imports).then(([mod, { default: bsonExt }]) => {
 			'ops/ms'
 		)
 
+		///////////////////////////////////////////////////////////
 		performance.mark('JSStart')
 		for (let i = 0; i < ITERATIONS; i++) {
 			jsResults[i] = bsonToJsonJS(testDocs[i])
@@ -124,7 +134,7 @@ Promise.all(imports).then(([mod, { default: bsonExt }]) => {
 			'JSEnd'
 		)
 		log(
-			'JS took',
+			'\tJS took',
 			jsMeasure.duration.toFixed(6),
 			'ms',
 			'or',
@@ -132,10 +142,34 @@ Promise.all(imports).then(([mod, { default: bsonExt }]) => {
 			'ops/ms'
 		)
 
-		if (isNodeJS) {
+		///////////////////////////////////////////////////////////
+		performance.mark('jsBSONStart')
+		for (let i = 0; i < ITERATIONS; i++) {
+			wasmResults[i] = JSON.stringify(jsBSON.deserialize(testDocs[i]))
+		}
+		performance.mark('jsBSONEnd')
+		const jsBSONMeasure = performance.measure(
+			'time took to do js-bson',
+			'jsBSONStart',
+			'jsBSONEnd'
+		)
+		log(
+			'\tJS BSON took',
+			jsBSONMeasure.duration.toFixed(6),
+			'ms',
+			'or',
+			(jsBSONMeasure.duration / ITERATIONS).toFixed(6),
+			'ops/ms'
+		)
+
+		///////////////////////////////////////////////////////////
+		let bsonExtResults
+		if (isNodeJS && bsonExt) {
+			bsonExtResults = new Array(ITERATIONS)
+
 			performance.mark('CPPStart')
 			for (let i = 0; i < ITERATIONS; i++) {
-				jsResults[i] = bsonToJsonCPP(bsonExt, testDocs[i])
+				bsonExtResults[i] = JSON.stringify(bsonExt.deserialize(testDocs[i]))
 			}
 			performance.mark('CPPEnd')
 			const cppMeasure = performance.measure(
@@ -144,42 +178,26 @@ Promise.all(imports).then(([mod, { default: bsonExt }]) => {
 				'CPPEnd'
 			)
 			log(
-				'CPP took',
+				'\tCPP took',
 				cppMeasure.duration.toFixed(6),
 				'ms',
 				'or',
 				(cppMeasure.duration / ITERATIONS).toFixed(6),
 				'ops/ms'
 			)
+
 		}
 
+		// END /////////////////////////////////////////////////////////
 		performance.clearMarks()
 		performance.clearMeasures()
 
-		globalThis.results.push({ ITERATIONS, wasmResults, jsResults })
+		globalThis.results.push({
+			ITERATIONS,
+			wasmResults,
+			jsResults,
+			bsonExtResults,
+			jsBSONResults,
+		})
 	}
 })
-
-let bsonExtInstance
-function bsonToJsonCPP(bsonExt, doc) {
-	if (!bsonExtInstance) {
-		bsonExtInstance = new bsonExt([
-			bsonExt.Binary,
-			bsonExt.Code,
-			bsonExt.DBRef,
-			bsonExt.Decimal128,
-			bsonExt.Double,
-			bsonExt.Int32,
-			bsonExt.Long,
-			bsonExt.Map,
-			bsonExt.MaxKey,
-			bsonExt.MinKey,
-			bsonExt.ObjectId,
-			bsonExt.BSONRegExp,
-			bsonExt.Symbol,
-			bsonExt.Timestamp,
-		])
-	}
-
-	return JSON.stringify(bsonExtInstance.deserialize(doc))
-}
